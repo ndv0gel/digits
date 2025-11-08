@@ -9,7 +9,7 @@
     "arrow-parens": "off",
     "func-names": "off",
     "linebreak-style": "off",
-    "max-len": ["error", 120],
+    "max-len": ["error", 150],
     "no-console": "off",
     "no-plusplus": "off",
     "no-restricted-syntax": "off",
@@ -20,6 +20,7 @@
     "react/function-component-definition": "off",
     "react/jsx-props-no-spreading": "off",
     "react/one-expression-per-line": "off",
-    "react/react-in-jsx-scope": "off"
+    "react/react-in-jsx-scope": "off",
+    "react/prop-types": "off"
   }
 }
