@@ -1,46 +1,101 @@
-import { PrismaClient, Role, Condition } from '@prisma/client';
-import { hash } from 'bcrypt';
+import { PrismaClient, Condition, Role } from '@prisma/client';
+// Import the entire JSON file as a module, then access properties
 import * as config from '../config/settings.development.json';
 
 const prisma = new PrismaClient();
 
+// Define explicit types for the data from settings.development.json
+interface UserData {
+  email: string;
+  password: string;
+  role?: string; // role is optional in some default accounts
+}
+
+interface StuffData {
+  name: string;
+  quantity: number;
+  owner: string;
+  condition: string;
+}
+
+interface ContactData {
+  firstName: string;
+  lastName: string;
+  address: string;
+  image: string;
+  description: string;
+  owner: string;
+}
+
 async function main() {
   console.log('Seeding the database');
-  const password = await hash('changeme', 10);
-  config.defaultAccounts.forEach(async (account) => {
-    const role = account.role as Role || Role.USER;
-    console.log(`  Creating user: ${account.email} with role: ${role}`);
+
+  // Seed users
+  await Promise.all(config.defaultAccounts.map(async (data: UserData) => { // Explicitly type data
+    const role = (data.role as Role) || Role.USER;
+    console.log(`  Creating user: ${data.email} with role: ${role}`);
     await prisma.user.upsert({
-      where: { email: account.email },
+      where: { email: data.email },
       update: {},
       create: {
-        email: account.email,
-        password,
-        role,
+        email: data.email,
+        password: data.password,
+        role: role,
       },
     });
-    // console.log(`  Created user: ${user.email} with role: ${user.role}`);
-  });
-  for (const data of config.defaultData) {
-    const condition = data.condition as Condition || Condition.good;
-    console.log(`  Adding stuff: ${JSON.stringify(data)}`);
-    // eslint-disable-next-line no-await-in-loop
+  }));
+
+  // Seed stuff
+  await Promise.all(config.defaultStuff.map(async (data: StuffData) => { // Explicitly type data
+    const condition = (data.condition as Condition) || Condition.good;
+    console.log(`  Adding stuff: ${data.name} (${data.owner})`);
     await prisma.stuff.upsert({
-      where: { id: config.defaultData.indexOf(data) + 1 },
+      where: { 
+        name_owner: {
+          name: data.name,
+          owner: data.owner,
+        },
+      }, // Assuming 'name' is unique for Stuff or we use ID
       update: {},
       create: {
         name: data.name,
         quantity: data.quantity,
         owner: data.owner,
-        condition,
+        condition: condition,
       },
     });
-  }
+  }));
+
+  // Seed contacts
+  await Promise.all(config.defaultContacts.map(async (data: ContactData) => { // Explicitly type data
+    console.log(`  Adding contact: ${data.firstName} ${data.lastName}`);
+    await prisma.contact.upsert({
+      where: {
+        // Correct syntax for composite unique field in upsert
+        firstName_lastName_owner: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          owner: data.owner,
+        },
+      },
+      update: {},
+      create: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        address: data.address,
+        image: data.image,
+        description: data.description,
+        owner: data.owner,
+      },
+    });
+  }));
 }
+
 main()
-  .then(() => prisma.$disconnect())
-  .catch(async (e) => {
+  .catch((e) => {
     console.error(e);
-    await prisma.$disconnect();
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });
