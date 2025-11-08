@@ -1,5 +1,5 @@
 import { PrismaClient, Condition, Role } from '@prisma/client';
-// Import the entire JSON file as a module, then access properties
+import { hash } from 'argon2';
 import * as config from '../config/settings.development.json';
 
 const prisma = new PrismaClient();
@@ -34,12 +34,14 @@ async function main() {
   await Promise.all(config.defaultAccounts.map(async (data: UserData) => { // Explicitly type data
     const role = (data.role as Role) || Role.USER;
     console.log(`  Creating user: ${data.email} with role: ${role}`);
+    const hashedPassword = await 
+  hash(data.password);
     await prisma.user.upsert({
       where: { email: data.email },
-      update: {},
+      update: { password: hashedPassword },
       create: {
         email: data.email,
-        password: data.password,
+        password: hashedPassword,
         role: role,
       },
     });
