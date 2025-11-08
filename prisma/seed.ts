@@ -1,4 +1,5 @@
 import { PrismaClient, Condition, Role } from '@prisma/client';
+import { hash } from 'argon2'; // Using argon2 for password hashing
 // Import the entire JSON file as a module, then access properties
 import * as config from '../config/settings.development.json';
 
@@ -8,7 +9,7 @@ const prisma = new PrismaClient();
 interface UserData {
   email: string;
   password: string;
-  role?: string; // role is optional in some default accounts
+  role?: string;
 }
 
 interface StuffData {
@@ -31,47 +32,47 @@ async function main() {
   console.log('Seeding the database');
 
   // Seed users
-  await Promise.all(config.defaultAccounts.map(async (data: UserData) => { // Explicitly type data
+  await Promise.all(config.defaultAccounts.map(async (data: UserData) => {
     const role = (data.role as Role) || Role.USER;
     console.log(`  Creating user: ${data.email} with role: ${role}`);
+    const hashedPassword = await hash(data.password); // HASH THE PASSWORD HERE
     await prisma.user.upsert({
       where: { email: data.email },
-      update: {},
+      update: { password: hashedPassword }, // Update existing password if user exists
       create: {
         email: data.email,
-        password: data.password,
+        password: hashedPassword, // Use the hashed password
         role: role,
       },
     });
   }));
 
   // Seed stuff
-  await Promise.all(config.defaultStuff.map(async (data: StuffData) => { // Explicitly type data
+  await Promise.all(config.defaultStuff.map(async (data: StuffData) => {
     const condition = (data.condition as Condition) || Condition.good;
     console.log(`  Adding stuff: ${data.name} (${data.owner})`);
     await prisma.stuff.upsert({
-      where: { 
+      where: { // CORRECTED WHERE CLAUSE for composite unique
         name_owner: {
           name: data.name,
           owner: data.owner,
         },
-      }, // Assuming 'name' is unique for Stuff or we use ID
+      },
       update: {},
       create: {
         name: data.name,
         quantity: data.quantity,
         owner: data.owner,
-        condition: condition,
+        condition: condition, // Use the 'condition' enum variable
       },
     });
   }));
 
   // Seed contacts
-  await Promise.all(config.defaultContacts.map(async (data: ContactData) => { // Explicitly type data
+  await Promise.all(config.defaultContacts.map(async (data: ContactData) => {
     console.log(`  Adding contact: ${data.firstName} ${data.lastName}`);
     await prisma.contact.upsert({
       where: {
-        // Correct syntax for composite unique field in upsert
         firstName_lastName_owner: {
           firstName: data.firstName,
           lastName: data.lastName,

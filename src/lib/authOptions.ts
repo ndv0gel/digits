@@ -1,10 +1,10 @@
 /* eslint-disable arrow-body-style */
-import { compare } from 'bcrypt';
+import { verify } from 'argon2'; // Using argon2
 import { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@lib/prisma';
 
-const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = { // Named export
   session: {
     strategy: 'jwt',
   },
@@ -20,23 +20,37 @@ const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
+        // console.log('Attempting to authorize user...'); // Debugging log
+        // console.log('Credentials provided:', credentials); // Debugging log
+
         if (!credentials?.email || !credentials.password) {
+          // console.log('Missing email or password credentials.'); // Debugging log
           return null;
         }
+
         const user = await prisma.user.findUnique({
           where: {
             email: credentials.email,
           },
         });
+
         if (!user) {
+          // console.log(`User not found for email: ${credentials.email}`); // Debugging log
           return null;
         }
 
-        const isPasswordValid = await compare(credentials.password, user.password);
+        // console.log('User found:', user.email); // Debugging log
+
+        const isPasswordValid = await verify(user.password, credentials.password); // Using argon2.verify
+
+        // console.log('Is password valid?', isPasswordValid); // Debugging log
+
         if (!isPasswordValid) {
+          // console.log('Invalid password.'); // Debugging log
           return null;
         }
 
+        // console.log('Authorization successful for user:', user.email); // Debugging log
         return {
           id: `${user.id}`,
           email: user.email,
@@ -80,4 +94,4 @@ const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-export default authOptions;
+export { authOptions }; // Named export

@@ -1,18 +1,18 @@
-import * as Yup from 'yup';
+import * as yup from 'yup';
 
-export const AddStuffSchema = Yup.object({
-  name: Yup.string().required(),
-  quantity: Yup.number().positive().required(),
-  condition: Yup.string().oneOf(['excellent', 'good', 'fair', 'poor']).required(),
-  owner: Yup.string().required(),
+export const AddStuffSchema = yup.object({
+  name: yup.string().required(),
+  quantity: yup.number().positive().required(),
+  condition: yup.string().oneOf(['excellent', 'good', 'fair', 'poor']).required(),
+  owner: yup.string().required(),
 });
 
-export const EditStuffSchema = Yup.object({
-  id: Yup.number().required(),
-  name: Yup.string().required(),
-  quantity: Yup.number().positive().required(),
-  condition: Yup.string().oneOf(['excellent', 'good', 'fair', 'poor']).required(),
-  owner: Yup.string().required(),
+export const EditStuffSchema = yup.object({
+  id: yup.number().required(),
+  name: yup.string().required(),
+  quantity: yup.number().positive().required(),
+  condition: yup.string().oneOf(['excellent', 'good', 'fair', 'poor']).required(),
+  owner: yup.string().required(),
 });
 
 export interface Contact {
@@ -22,3 +22,21 @@ export interface Contact {
   image: string;
   description: string;
 }
+
+export const AddContactSchema = yup.object({
+  firstName: yup.string().required('First Name is required.'),
+  lastName: yup.string().required('Last Name is required.'),
+  address: yup.string().required('Address is required.'),
+  image: yup.string().url('Image must be a valid URL.').required('Image URL is required.'),
+  description: yup.string().required('Description is required.'),
+  owner: yup.string().required('Owner is required.'),
+});
+
+export const EditContactSchema = yup.object({
+  firstName: yup.string().required('First Name is required.'),
+  lastName: yup.string().required('Last Name is required.'),
+  address: yup.string().required('Address is required.'),
+  image: yup.string().url('Image must be a valid URL.').required('Image URL is required.'),
+  description: yup.string().required('Description is required.'),
+  owner: yup.string().required('Owner is required.'),
+});

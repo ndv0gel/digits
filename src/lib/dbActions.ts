@@ -1,9 +1,13 @@
 'use server';
 
 import { Stuff, Condition } from '@prisma/client';
-import { hash } from 'bcrypt';
+import { hash } from 'argon2'; // Using argon2 for password hashing
 import { redirect } from 'next/navigation';
+import { getServerSession } from 'next-auth';
+import { authOptions } from './authOptions';
 import { prisma } from './prisma';
+import { AddStuffSchema, EditStuffSchema } from './validationSchemas';
+import { AddContactSchema, EditContactSchema } from './validationSchemas';
 
 /**
  * Adds a new stuff to the database.
@@ -69,7 +73,7 @@ export async function deleteStuff(id: number) {
  */
 export async function createUser(credentials: { email: string; password: string }) {
   // console.log(`createUser data: ${JSON.stringify(credentials, null, 2)}`);
-  const password = await hash(credentials.password, 10);
+  const password = await hash(credentials.password); // Hashing password with argon2
   await prisma.user.create({
     data: {
       email: credentials.email,
@@ -84,11 +88,54 @@ export async function createUser(credentials: { email: string; password: string 
  */
 export async function changePassword(credentials: { email: string; password: string }) {
   // console.log(`changePassword data: ${JSON.stringify(credentials, null, 2)}`);
-  const password = await hash(credentials.password, 10);
+  const password = await hash(credentials.password); // Hashing password with argon2
   await prisma.user.update({
     where: { email: credentials.email },
     data: {
       password,
     },
   });
+}
+
+/**
+ * Adds a new contact to the Contacts table.
+ * @param contact, an object containing the fields of the contact to be inserted.
+ */
+export async function addContact(contact: { firstName: string, lastName: string, address: string, image: string, description: string, owner: string }) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    throw new Error('You must be logged in to add a contact.');
+  }
+  try {
+    const validatedContact = await AddContactSchema.validate(contact, { abortEarly: false });
+    await prisma.contact.create({ data: validatedContact });
+  } catch (error: any) {
+    if (error.name === 'ValidationError') {
+      throw new Error(error.errors.join(', '));
+    }
+    throw error;
+  }
+  redirect('/list');
+}
+
+/**
+ * Updates an existing contact in the Contacts table.
+ * @param id, the id of the contact to update.
+ * @param contact, an object containing the fields of the contact to be updated.
+ */
+export async function editContact(id: number, contact: { firstName: string, lastName: string, address: string, image: string, description: string, owner: string }) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    throw new Error('You must be logged in to edit a contact.');
+  }
+  try {
+    const validatedContact = await EditContactSchema.validate(contact, { abortEarly: false });
+    await prisma.contact.update({ where: { id }, data: validatedContact });
+  } catch (error: any) {
+    if (error.name === 'ValidationError') {
+      throw new Error(error.errors.join(', '));
+    }
+    throw error;
+  }
+  redirect('/list');
 }
