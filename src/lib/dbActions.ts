@@ -4,9 +4,8 @@ import { Stuff, Condition } from '@prisma/client';
 import { hash } from 'argon2'; // Using argon2 for password hashing
 import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
-import { authOptions } from './authOptions';
+import authOptions from './authOptions';
 import { prisma } from './prisma';
-import { AddStuffSchema, EditStuffSchema } from './validationSchemas';
 import { AddContactSchema, EditContactSchema } from './validationSchemas';
 
 /**

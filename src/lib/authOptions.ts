@@ -94,4 +94,4 @@ const authOptions: NextAuthOptions = { // Named export
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-export { authOptions }; // Named export
+export default authOptions; // Named export

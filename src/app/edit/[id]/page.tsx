@@ -22,7 +22,7 @@ const EditContact = async ({ params }: EditContactPageProps) => {
   }
 
   const id = parseInt(params.id, 10);
-  if (isNaN(id)) {
+  if (Number.isNaN(id)) {
     return (
       <Container id="edit-contact-page" className="py-3">
         <Col>
@@ -40,7 +40,11 @@ const EditContact = async ({ params }: EditContactPageProps) => {
       <Container id="edit-contact-page" className="py-3">
         <Col>
           <h2>Contact Not Found</h2>
-          <p>The contact with ID {id} does not exist.</p>
+          <p>
+            The contact with ID
+            {id}
+            does not exist.
+          </p>
         </Col>
       </Container>
     );
