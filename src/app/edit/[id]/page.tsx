@@ -1,33 +1,68 @@
+import { Col, Container } from 'react-bootstrap';
 import { getServerSession } from 'next-auth';
-import { notFound } from 'next/navigation';
-import { Stuff } from '@prisma/client';
-import authOptions from '@/lib/authOptions';
-import { loggedInProtectedPage } from '@/lib/page-protection';
-import { prisma } from '@/lib/prisma';
-import EditStuffForm from '@/components/EditStuffForm';
+import { authOptions } from '@lib/authOptions';
+import { prisma } from '@lib/prisma';
+import EditContactForm from '@components/EditContactForm';
 
-export default async function EditStuffPage({ params }: { params: { id: string | string[] } }) {
-  // Protect the page, only logged in users can access it.
+interface EditContactPageProps {
+  params: { id: string };
+}
+
+const EditContact = async ({ params }: EditContactPageProps) => {
   const session = await getServerSession(authOptions);
-  loggedInProtectedPage(
-    session as {
-      user: { email: string; id: string; randomKey: string };
-      // eslint-disable-next-line @typescript-eslint/comma-dangle
-    } | null,
-  );
-  const id = Number(Array.isArray(params?.id) ? params?.id[0] : params?.id);
-  // console.log(id);
-  const stuff: Stuff | null = await prisma.stuff.findUnique({
-    where: { id },
-  });
-  // console.log(stuff);
-  if (!stuff) {
-    return notFound();
+  if (!session) {
+    return (
+      <Container id="edit-contact-page" className="py-3">
+        <Col>
+          <h2>Access Denied</h2>
+          <p>Please log in to edit a contact.</p>
+        </Col>
+      </Container>
+    );
   }
 
-  return (
-    <main>
-      <EditStuffForm stuff={stuff} />
-    </main>
-  );
-}
+  const id = parseInt(params.id, 10);
+  if (Number.isNaN(id)) {
+    return (
+      <Container id="edit-contact-page" className="py-3">
+        <Col>
+          <h2>Invalid Contact ID</h2>
+          <p>The provided ID is not a valid number.</p>
+        </Col>
+      </Container>
+    );
+  }
+
+  const contact = await prisma.contact.findUnique({ where: { id } });
+
+  if (!contact) {
+    return (
+      <Container id="edit-contact-page" className="py-3">
+        <Col>
+          <h2>Contact Not Found</h2>
+          <p>
+            The contact with ID
+            {id}
+            does not exist.
+          </p>
+        </Col>
+      </Container>
+    );
+  }
+
+  // Check if the logged-in user is the owner of the contact
+  if (session.user?.email !== contact.owner) {
+    return (
+      <Container id="edit-contact-page" className="py-3">
+        <Col>
+          <h2>Unauthorized</h2>
+          <p>You do not have permission to edit this contact.</p>
+        </Col>
+      </Container>
+    );
+  }
+
+  return <EditContactForm contact={contact} userEmail={session.user?.email || ''} />;
+};
+
+export default EditContact;

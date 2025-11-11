@@ -43,7 +43,7 @@ model Stuff {
   condition Condition @default(good)
   owner     String
 
-  @@unique([name, owner])
+  @@unique([name, owner]) // Added unique constraint
 }
 
 model Contact {

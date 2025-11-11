@@ -1,7 +1,8 @@
 'use client';
 
 import { Card, Image } from 'react-bootstrap';
-import { Contact } from '@lib/validationSchemas';
+import { Contact } from '@lib/validationSchemas'; // Keep this import for the interface
+import Link from 'next/link';
 
 interface ContactCardProps {
   contact: Contact;
@@ -17,6 +18,9 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact }) => (
     <Card.Body>
       <Card.Text>{contact.description}</Card.Text>
     </Card.Body>
+    <Card.Footer>
+      <Link href={`/edit/${contact.id}`}>Edit</Link>
+    </Card.Footer>
   </Card>
 );
 
